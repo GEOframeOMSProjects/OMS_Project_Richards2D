@@ -1,0 +1,137 @@
+/*
+ * Mesh
+ *
+ */
+import static oms3.SimBuilder.instance as OMS3
+import static oms3.SimBuilder.*
+def home = oms_prj
+
+// start and end date of the simulation
+
+def startDate= "2017-01-01 00:00"
+
+
+def endDate="2017-01-01 01:00"
+
+// time interval of temporal series [minutes]
+def tTimestep = 5 
+
+
+solver = OMS3.sim(name: "Richards 2D", {
+
+resource "$oms_prj/lib"
+
+	//model() {
+	model(while : "reader_BC.doProcess"  ){
+
+		components {
+
+			// read of the .msh file
+			"readMsh" "readtriangularization.Readmsh"
+
+			// generate the mesh
+			"generateMesh" "generatemesh.GenerateTriangularMesh"
+			
+			// richards' 2D solver
+			"solver" "richards2Dsolver.CallRichards2DSolver"
+			
+			// readers of boundary condition time-series
+            "reader_BC"    "org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader"
+			
+			// this component stores solver's output during the simulation
+			"buffer" "bufferWriter.RichardsBuffer2D"
+			
+			// output writer in a NetCDF format
+			"writeNetCDF" "bidimensionalProblemTimeDependent.WriteNetCDFRichards2D"
+
+		}
+
+		parameter {
+
+			// File path of .msh file
+			"readMsh.fileName" "$oms_prj//data/msh/boundary_condition.msh"
+			"readMsh.splitter" " "
+			"readMsh.checkData" false
+
+			"generateMesh.geometryType" "EuclideanCartesian"
+			"generateMesh.checkData" false
+			
+			"solver.alphaSpecificStorage" "{0.0,0.0}"
+			"solver.betaSpecificStorage"  "{0.0,0.0}"
+			"solver.ks"                   "{0.00028,0.00028}"
+			"solver.par1SWRC"             "{1.56,1.56}"
+			"solver.par2SWRC"             "{3.6,3.6}"
+			"solver.par3SWRC"             "{0.0,0.0}"
+			"solver.par4SWRC"             "{0.0,0.0}"
+			"solver.par5SWRC"             "{0.0,0.0}"
+			"solver.psiStar1"             "{-0.144,-0.144}"
+			"solver.psiStar2"             "{0.0,0.0}"
+			"solver.psiStar3"             "{0.0,0.0}"
+			"solver.thetaS"               "{0.43,0.43}"
+			"solver.thetaR"               "{0.078,0.078}"
+			"solver.soilHydraulicModel"   "VanGenuchten"
+			"solver.typeUHCModel"         "MualemVanGenuchten" 
+			"solver.typeMatop"            "2DRichards"
+			"solver.checkData"            false
+			"solver.tTimestep"            "300"
+			"solver.timeDelta"            "300"
+			
+			// parameters reader data input top boundary condition
+           "reader_BC.file"             "$oms_prj//data/Timeseries/Test.csv"
+           "reader_BC.idfield"          "ID"  
+           "reader_BC.tStart"           "${startDate}"
+           "reader_BC.tEnd"             "${endDate}"
+           "reader_BC.tTimestep"        "${tTimestep}"
+           "reader_BC.fileNovalue"      "-9999"
+			
+			// folder path for the output files
+           "writeNetCDF.fileName" "$oms_prj//output/Output_prova_JLab.nc"
+          
+           // here you can enter a string to describe your simulation
+           "writeNetCDF.briefDescritpion" "Prova 2D "
+
+		}
+
+		connect{
+			
+			"readMsh.verticesCoordinates"                "generateMesh.verticesCoordinates"
+			"readMsh.elementsVertices"                   "generateMesh.elementsVertices"
+			"readMsh.borderEdgesVertices"                "generateMesh.borderEdgesVertices"
+			"readMsh.borderEdgesLabel"                   "generateMesh.borderEdgesLabel"
+			
+			"generateMesh.l"                             "solver.l"                                 
+			"generateMesh.r"                             "solver.r"                                 
+			"generateMesh.s_i"                           "solver.s_i"
+			"generateMesh.elementsArea"                  "solver.elementsArea"
+			"generateMesh.edgesLength"                   "solver.edgesLenght"                       
+			"generateMesh.delta_j"                       "solver.delta_j"
+			"generateMesh.edgeNormalVector"              "solver.edgeNormalVector"
+			"generateMesh.elementsCentroidsCoordinates"  "solver.elementsCentroidsCoordinates"      
+			"readMsh.elementsLabel"                      "solver.elementsLabel"                     
+			"generateMesh.edgeBoundaryBCType"            "solver.edgesBoundaryBCType"               
+			"generateMesh.edgeBoundaryBCValue"           "solver.edgesBoundaryBCValue"      
+
+            "reader_BC.outData"                          "solver.inBC"		
+            "reader_BC.tCurrent"                         "solver.inCurrentDate"		
+			
+			
+			"solver.outputToBuffer"                      "buffer.inputVariable"
+			"generateMesh.elementsCentroidsCoordinates"  "buffer.inputSpatialCoordinate"
+			"generateMesh.edgesCentroidsCoordinates"     "buffer.inputDualSpatialCoordinate"
+			"reader_BC.tCurrent"                         "buffer.inputDate"
+			
+			"buffer.myVariable"                          "writeNetCDF.myVariables"
+			"buffer.mySpatialCoordinateX"                "writeNetCDF.mySpatialCoordinateX"
+			"buffer.mySpatialCoordinateZ"                "writeNetCDF.mySpatialCoordinateZ"
+			"buffer.myDualSpatialCoordinateX"            "writeNetCDF.myDualSpatialCoordinateX"
+			"buffer.myDualSpatialCoordinateZ"            "writeNetCDF.myDualSpatialCoordinateZ"
+			"reader_BC.doProcess"                        "writeNetCDF.doProcess"
+			
+			
+        }
+
+    }
+
+}
+
+)

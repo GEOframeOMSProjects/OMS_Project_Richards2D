@@ -1,0 +1,43 @@
+/*
+ * Mesh
+ *
+ */
+import static oms3.SimBuilder.instance as OMS3
+import static oms3.SimBuilder.*
+def home = oms_prj
+
+
+solver = OMS3.sim(name: "Generate Mesh", {
+
+resource "$oms_prj/lib"
+    
+    model() {
+    
+        components {
+        
+           // read of the .msh file
+           "readMsh" "readtriangularization.Readmsh"
+          
+           // generate the mesh
+           "generateMesh" "generatemesh.GenerateTriangularMesh"
+
+        }
+        
+        parameter {
+        
+          // File path of .msh file
+          "readMsh.fileName" "$oms_prj//data/msh/square22.msh"
+          "readMsh.splitter" " "
+          "readMsh.checkData" false
+
+        }
+        
+        connect{
+
+        }
+
+    }
+
+}
+
+)
