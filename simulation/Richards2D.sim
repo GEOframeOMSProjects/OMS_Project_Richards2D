@@ -1,5 +1,5 @@
 /*
- * Mesh
+ * Richards 2D
  *
  */
 import static oms3.SimBuilder.instance as OMS3
