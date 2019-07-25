@@ -75,6 +75,7 @@ resource "$oms_prj/lib"
 			"solver.checkData"            false
 			"solver.tTimestep"            "300"
 			"solver.timeDelta"            "300"
+			"solver.zSeePage"             "0"
 			
 			// parameters reader data input top boundary condition
            "reader_BC.file"             "$oms_prj//data/Timeseries/Test.csv"
