@@ -1,20 +1,22 @@
 /*
  * Richards 2D
+ * 
+ * Authors: Niccolo` Tubini and Riccardo Rigon
  *
  */
 import static oms3.SimBuilder.instance as OMS3
 import static oms3.SimBuilder.*
 def home = oms_prj
 
-// start and end date of the simulation yyyy'mm-dd hh:mm
+// start and end date of the simulation yyyy-mm-dd hh:mm
 
-def startDate= "2016-01-01 00:00"
+def startDate= "2017-01-01 00:00"
 
 
-def endDate="2017-01-02 00:00"
+def endDate="2017-01-01 00:00"
 
 // time interval of temporal series [minutes]
-def tTimestep = 60 
+def tTimestep = 60
 
 
 solver = OMS3.sim(name: "Richards 2D", {
@@ -26,9 +28,12 @@ resource "$oms_prj/lib"
 
 		components {
 
-			// read of the .msh file
-			"readMesh" "readtriangularization.Readcsv"
+			// reader of the .msh file (FreeFem)
+			//"readMesh" "readtriangularization.Readmsh"
 
+			// reader of the .csv file (cartesian grid)
+			"readMesh" "readtriangularization.Readcsv"
+			
 			// generate the mesh
 			"generateMesh" "generatemesh.GenerateMesh"
 			
@@ -50,10 +55,16 @@ resource "$oms_prj/lib"
 
 			// File path of .msh file
 			"readMesh.fileName" "$oms_prj//data/msh/CasulliOK.csv"
+			//splitter:
+			// 	if you read a .msh file " " (white space)
+			// 	if you read a .csv file ","
 			"readMesh.splitter" ","
 			"readMesh.checkData" false
 
 			"generateMesh.geometryType" "EuclideanCartesian"
+			// The grid can be triangular (unstructured) or cartesian:
+			// 	"triangular"
+			// 	"cartesian"
 			"generateMesh.meshType" "Cartesian"
 			"generateMesh.checkData" false
 			
@@ -73,14 +84,24 @@ resource "$oms_prj/lib"
 			"solver.soilHydraulicModel"   "VanGenuchten"
 			"solver.typeUHCModel"         "MualemVanGenuchten" 
 			"solver.typeMatop"            "2DRichards"
+			// Initial condition, two options:
+			// 	"hydrostatic" specifing the depth [m] of the see page (zSeePage)
+			// 	"constant" with psi=zSeePage
 			"solver.initialConditionType" "constant"
 			"solver.newtonTolerance"      "0.000000001"
 			"solver.cgTolerance"          "0.000000001"
 			"solver.MAXITER_NEWT"         "30"
+			// Picard iteration 1 or 2
 			"solver.picardIteration"      "2" 
 			"solver.checkData"            false
-			"solver.tTimestep"            "3600"
+			// time step [s], it must be consistent
+			//	 with tTimestep defined at line 22
+			"solver.tTimestep"            tTimestep*60
+			// timeDelta: time step [s] used to integrate the equation,
+			//	this is the Delta t used in the numerical scheme
+			// 	timeDelta <= tTimestep
 			"solver.timeDelta"            "3600"
+			// Depth of the see page [m]
 			"solver.zSeePage"             "-488.0"
 			
 			// parameters reader data input top boundary condition
@@ -95,7 +116,7 @@ resource "$oms_prj/lib"
            "writeNetCDF.fileName" "$oms_prj//output/MCBride2016_OMS.nc"
           
            // here you can enter a string to describe your simulation
-           "writeNetCDF.briefDescritpion" "Mc Bride 2016 problem 4. picard iteration 2, Nested Newton tol 1E-9, CG tol 1E-9, delta t 3600s. "
+           "writeNetCDF.briefDescritpion" "Mc Bride 2016, problem 4. picard iteration 2, Nested Newton tol 1E-9, CG tol 1E-9, delta t 3600s. "
 
 		}
 
